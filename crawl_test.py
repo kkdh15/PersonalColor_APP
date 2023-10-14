@@ -7,7 +7,7 @@ from selenium.webdriver.common.by import By
 import time
 import urllib.request
 
-searchKey = input('검색 키워드 입력:')
+searchKey = input('검색어 입력:')
 
 driver = webdriver.Chrome()
 driver.get("https://www.google.co.kr/imghp?hl=ko&tab=wi&authuser=0&ogbl")
