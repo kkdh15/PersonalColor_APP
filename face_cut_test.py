@@ -19,3 +19,4 @@ if image is not None:
     cv2.imwrite("test_detected1.jpg", image)
 else:
     print("이미지를 불러오는 데 문제가 있습니다. 이미지 파일 경로를 확인하세요.")
+    #ㅇㅇ
