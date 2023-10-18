@@ -1,10 +1,13 @@
+# ssl 인증을 거쳐갈 임시의 context 생성
 import ssl
 ssl._create_default_https_context = ssl._create_unverified_context
 
+import time
+# 크롤링 하기위한 라이브러리
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.by import By
-import time
+# url, http 를 여는데 필요한 라이브러리
 import urllib.request
 
 searchKey = input('검색어 입력:')
@@ -53,8 +56,10 @@ for image in images:
         urllib.request.install_opener(opener)
         urllib.request.urlretrieve(imgUrl, f'./imgs/{searchKey}{str(count)}.jpg')
         count = count + 1
+        if (count == 10):
+            break
     except Exception as e:
         print('e : ', e)
         pass
 
-driver.close()
+driver.quit()
