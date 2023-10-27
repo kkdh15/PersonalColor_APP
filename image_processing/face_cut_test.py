@@ -4,7 +4,7 @@ import os
 cascade_path = 'cascades/haarcascade_frontalface_default.xml'
 face_cascade = cv2.CascadeClassifier(cascade_path)
 # 이미지 파일이 있는 디렉토리 경로 설정
-image_dir = 'imgs/'
+image_dir = 'data/Spr_Blight'
 
 # 디렉토리 내의 모든 파일 목록 가져오기
 image_files = [f for f in os.listdir(image_dir) if os.path.isfile(os.path.join(image_dir, f))]
