@@ -111,10 +111,10 @@ def main():
             history['train_loss'].append(train_loss)
             history['train_acc'].append(train_acc)
             history['test_loss'].append(test_loss)
-            history['test_acc'].append(test_loss)
+            history['test_acc'].append(test_acc)
 
             print(
-                f'Epoch {epoch}/{num_epochs - 1} Train Loss: {train_loss:.4f} Acc: {train_acc:.4f} test Loss: {test_loss:.4f} Acc: {test_loss:.4f}')
+                f'Epoch {epoch}/{num_epochs - 1} Train Loss: {train_loss:.4f} Acc: {train_acc:.4f} test Loss: {test_loss:.4f} Acc: {test_acc:.4f}')
 
         return history
 
