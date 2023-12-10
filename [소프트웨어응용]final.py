@@ -6,7 +6,7 @@ from torchvision import datasets, transforms
 from torch.utils.data.sampler import SubsetRandomSampler
 import torch.optim as optim
 import matplotlib.pyplot as plt
-
+from sklearn.metrics import precision_score, recall_score, f1_score
 
 def main():
     # 데이터 변환
@@ -47,8 +47,6 @@ def main():
     model = timm.create_model('efficientnet_b0', pretrained=False, num_classes=9, drop_rate=0.2).to(device)
 
     train_transform = transforms.Compose([
-        transforms.RandomHorizontalFlip(),
-        transforms.RandomVerticalFlip(),
         transforms.Resize((224, 224)),
         transforms.ToTensor(),
         transforms.Normalize(mean, std)
@@ -67,13 +65,24 @@ def main():
     train_sampler = SubsetRandomSampler(train_idx)
     valid_sampler = SubsetRandomSampler(valid_idx)
 
-    train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=16, sampler=train_sampler, num_workers=4)
-    valid_loader = torch.utils.data.DataLoader(train_dataset, batch_size=16, sampler=valid_sampler, num_workers=4)
+    train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=32, sampler=train_sampler, num_workers=4)
+    valid_loader = torch.utils.data.DataLoader(train_dataset, batch_size=32, sampler=valid_sampler, num_workers=4)
 
-    def train_model(model, train_loader, valid_loader, epochs=200, early_stopping_rounds=10):
+    def save_model(model, path):
+        torch.save(model.state_dict(), path)
+
+
+    def train_model(model, train_loader, valid_loader, epochs=50, early_stopping_rounds=10):
+        all_preds = []
+        all_labels = []
+
+        best_val_acc = 0.0
+        best_model_path = "C:/Users/admin/PycharmProjects/MLpractice/best_model.pth"
+
         criterion = torch.nn.CrossEntropyLoss()
         optimizer = optim.Adam(model.parameters(), lr=0.01)
 
+        precisions, recalls, f1_scores = [], [], []
         train_losses, valid_losses = [], []
         train_accuracies, valid_accuracies = [], []
 
@@ -91,6 +100,8 @@ def main():
                 optimizer.zero_grad()
                 outputs = model(inputs)
                 _, preds = torch.max(outputs, 1)
+                all_preds.extend(preds.cpu().numpy())
+                all_labels.extend(labels.cpu().numpy())
                 loss = criterion(outputs, labels)
                 loss.backward()
                 optimizer.step()
@@ -126,9 +137,20 @@ def main():
             valid_losses.append(epoch_val_loss)
             valid_accuracies.append(epoch_val_acc)
 
-            print(
-                f'Epoch {epoch + 1}/{epochs} - Train loss: {epoch_loss:.4f}, Valid loss: {epoch_val_loss:.4f}, Train acc: {epoch_acc:.4f}, Valid acc: {epoch_val_acc:.4f}')
+            precision = precision_score(all_labels, all_preds, average='weighted')
+            recall = recall_score(all_labels, all_preds, average='weighted')
+            f1 = f1_score(all_labels, all_preds, average='weighted')
 
+            precisions.append(precision)
+            recalls.append(recall)
+            f1_scores.append(f1)
+
+            print(
+                f'Epoch {epoch + 1}/{epochs} - Train loss: {epoch_loss:.4f}, Valid loss: {epoch_val_loss:.4f}, Train acc: {epoch_acc:.4f}, Valid acc: {epoch_val_acc:.4f} Precision: {precision:.4f}, Recall: {recall:.4f}, F1 Score: {f1:.4f}')
+
+            if epoch_val_acc > best_val_acc:
+                best_val_acc = epoch_val_acc
+                save_model(model, best_model_path)
 
             if epoch_val_loss < last_val_loss:
                 loss_increase_count = 0
@@ -142,8 +164,11 @@ def main():
 
     train_losses, valid_losses, train_accuracies, valid_accuracies = train_model(model, train_loader, valid_loader)
 
-    plt.figure(figsize=(12, 4))
-    plt.subplot(1, 2, 1)
+    # 그래프 그리기
+    plt.figure(figsize=(18, 6))
+
+    # Loss 그래프
+    plt.subplot(1, 3, 1)
     plt.plot(train_losses, label='Train Loss')
     plt.plot(valid_losses, label='Valid Loss')
     plt.title(f'{model_name} Loss')
@@ -151,16 +176,25 @@ def main():
     plt.ylabel('Loss')
     plt.legend()
 
-    train_accuracies_cpu = [t.cpu().numpy() for t in train_accuracies]
-    valid_accuracies_cpu = [t.cpu().numpy() for t in valid_accuracies]
-
-    plt.subplot(1, 2, 2)
+    # 정확도 그래프
+    plt.subplot(1, 3, 2)
     plt.plot(train_accuracies_cpu, label='Train Accuracy')
-    plt.plot( valid_accuracies_cpu, label='Valid Accuracy')
+    plt.plot(valid_accuracies_cpu, label='Valid Accuracy')
     plt.title(f'{model_name} Accuracy')
     plt.xlabel('Epochs')
     plt.ylabel('Accuracy')
     plt.legend()
+
+    # 정밀도, 재현율, F1 Score 그래프
+    plt.subplot(1, 3, 3)
+    plt.plot(precisions, label='Precision')
+    plt.plot(recalls, label='Recall')
+    plt.plot(f1_scores, label='F1 Score')
+    plt.title(f'{model_name} Performance Metrics')
+    plt.xlabel('Epochs')
+    plt.ylabel('Metric Value')
+    plt.legend()
+
     plt.show()
 
 
